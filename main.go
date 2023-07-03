@@ -2,7 +2,10 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"github.com/fsnotify/fsnotify"
 	"github.com/gin-gonic/gin"
+	"github.com/spf13/viper"
 	"log"
 	"net/http"
 	"os"
@@ -12,15 +15,52 @@ import (
 )
 
 func main() {
+
+	// =========================================================================
+	// 读取配置文件
+
+	// 通过读取环境变量切换不同的配置文件
+	viper.AutomaticEnv()
+	debug := viper.GetBool("DEBUG")
+
+	// 默认为dev
+	configFileName := "config.dev.yaml"
+	if debug {
+		configFileName = "config.test.yaml"
+	}
+	config := new(Config)
+	viper.SetConfigFile(configFileName)
+	err := viper.ReadInConfig()
+	if err != nil {
+		panic(fmt.Sprintf("read config fail %v \n", err))
+	}
+
+	// 将配置文件映射到结构体
+	if err = viper.Unmarshal(config); err != nil {
+		panic(fmt.Sprintf("read config fail %v \n", err))
+	}
+
+	// 监控配置文件变化
+	viper.WatchConfig()
+	// 注意！！！配置文件发生变化后要同步到全局变量Conf
+	viper.OnConfigChange(func(in fsnotify.Event) {
+		log.Println("修改配置文件")
+		if err := viper.Unmarshal(config); err != nil {
+			panic(fmt.Errorf("unmarshal conf failed, err:%s \n", err))
+		}
+	})
+
 	router := gin.Default()
 
 	router.GET("/hello", func(c *gin.Context) {
-		time.Sleep(10 * time.Second)
 		c.String(http.StatusOK, "hello")
+	})
+	router.GET("/version", func(c *gin.Context) {
+		c.String(http.StatusOK, config.Server.Version)
 	})
 
 	api := http.Server{
-		Addr:    ":9999",
+		Addr:    config.Server.Port,
 		Handler: router,
 	}
 
