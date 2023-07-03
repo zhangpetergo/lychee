@@ -54,5 +54,4 @@ func main() {
 		}
 		// 做一些资源关闭，清理操作
 	}
-	<-serverError
 }
