@@ -6,6 +6,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
+	"github.com/zhangpetergo/lychee/business/web/v1/debug"
 	"log"
 	"net/http"
 	"os"
@@ -21,11 +22,11 @@ func main() {
 
 	// 通过读取环境变量切换不同的配置文件
 	viper.AutomaticEnv()
-	debug := viper.GetBool("DEBUG")
+	test := viper.GetBool("TEST")
 
 	// 默认为dev
 	configFileName := "config.dev.yaml"
-	if debug {
+	if test {
 		configFileName = "config.test.yaml"
 	}
 	config := new(Config)
@@ -50,6 +51,15 @@ func main() {
 		}
 	})
 
+	// =========================================================================
+	// Start Debug Service
+
+	go func() {
+		if err := http.ListenAndServe(config.Server.DebugHost, debug.StandardLibraryMux()); err != nil {
+			log.Println("")
+		}
+	}()
+
 	router := gin.Default()
 
 	router.GET("/hello", func(c *gin.Context) {
@@ -60,7 +70,7 @@ func main() {
 	})
 
 	api := http.Server{
-		Addr:    config.Server.Port,
+		Addr:    config.Server.APIHost,
 		Handler: router,
 	}
 

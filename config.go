@@ -2,7 +2,8 @@ package main
 
 type Config struct {
 	Server struct {
-		Port    string
-		Version string
+		APIHost   string
+		DebugHost string
+		Version   string
 	}
 }
