@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/fsnotify/fsnotify"
-	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
+	"github.com/zhangpetergo/lychee/app/services/sales-api/handlers"
 	"github.com/zhangpetergo/lychee/business/web/v1/debug"
 	"github.com/zhangpetergo/lychee/foundation/logger"
 	"net/http"
@@ -17,9 +17,11 @@ import (
 
 func main() {
 
+	// =========================================================================
 	// 初始化日志
 
 	log := logger.NewLogger("SALES-API")
+	defer log.Sync()
 
 	// =========================================================================
 	// 读取配置文件
@@ -61,26 +63,15 @@ func main() {
 	// Start Debug Service
 
 	go func() {
-		log.Infow("Service Debug Start", "HOST", config.Server.DebugHost)
+		log.Infow("Service Debug Start", "DebugHost", config.Server.DebugHost)
 		if err := http.ListenAndServe(config.Server.DebugHost, debug.StandardLibraryMux()); err != nil {
 			log.Errorw("Service Debug Shutdown", "HOST", config.Server.DebugHost)
 		}
 	}()
 
-	router := gin.Default()
-
-	router.GET("/hello", func(c *gin.Context) {
-		log.Info("hello")
-		c.String(http.StatusOK, "hello")
-	})
-	router.GET("/version", func(c *gin.Context) {
-		log.Error("error")
-		c.String(http.StatusOK, config.Server.Version)
-	})
-
 	api := http.Server{
 		Addr:    config.Server.APIHost,
-		Handler: router,
+		Handler: handlers.Router(log),
 	}
 
 	// 接收关闭信号
@@ -94,7 +85,7 @@ func main() {
 	serverError := make(chan error, 1)
 
 	go func() {
-		log.Info("俺启动了")
+		log.Infow("Service Start", "ApiHost", config.Server.APIHost)
 		if err := api.ListenAndServe(); err != nil {
 			serverError <- err
 		}
@@ -104,7 +95,8 @@ func main() {
 	case err := <-serverError:
 		log.Info("server error: ", err)
 	case sig := <-shutdown:
-		log.Info("receive signal:%v", sig)
+		log.Infow("shutdown", "status", "shutdown started", "signal", sig)
+		defer log.Infow("shutdown", "status", "shutdown complete", "signal", sig)
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		if err := api.Shutdown(ctx); err != nil {
