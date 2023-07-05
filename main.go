@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 	"github.com/zhangpetergo/lychee/business/web/v1/debug"
-	"log"
+	"github.com/zhangpetergo/lychee/foundation/logger"
 	"net/http"
 	"os"
 	"os/signal"
@@ -16,6 +16,10 @@ import (
 )
 
 func main() {
+
+	// 初始化日志
+
+	log := logger.NewLogger("SALES-API")
 
 	// =========================================================================
 	// 读取配置文件
@@ -33,11 +37,13 @@ func main() {
 	viper.SetConfigFile(configFileName)
 	err := viper.ReadInConfig()
 	if err != nil {
+		log.Error(err)
 		panic(fmt.Sprintf("read config fail %v \n", err))
 	}
 
 	// 将配置文件映射到结构体
 	if err = viper.Unmarshal(config); err != nil {
+		log.Error(err)
 		panic(fmt.Sprintf("read config fail %v \n", err))
 	}
 
@@ -45,7 +51,7 @@ func main() {
 	viper.WatchConfig()
 	// 注意！！！配置文件发生变化后要同步到全局变量Conf
 	viper.OnConfigChange(func(in fsnotify.Event) {
-		log.Println("修改配置文件")
+		log.Infow("修改配置文件")
 		if err := viper.Unmarshal(config); err != nil {
 			panic(fmt.Errorf("unmarshal conf failed, err:%s \n", err))
 		}
@@ -55,17 +61,20 @@ func main() {
 	// Start Debug Service
 
 	go func() {
+		log.Infow("Service Debug Start", "HOST", config.Server.DebugHost)
 		if err := http.ListenAndServe(config.Server.DebugHost, debug.StandardLibraryMux()); err != nil {
-			log.Println("")
+			log.Errorw("Service Debug Shutdown", "HOST", config.Server.DebugHost)
 		}
 	}()
 
 	router := gin.Default()
 
 	router.GET("/hello", func(c *gin.Context) {
+		log.Info("hello")
 		c.String(http.StatusOK, "hello")
 	})
 	router.GET("/version", func(c *gin.Context) {
+		log.Error("error")
 		c.String(http.StatusOK, config.Server.Version)
 	})
 
@@ -85,7 +94,7 @@ func main() {
 	serverError := make(chan error, 1)
 
 	go func() {
-		log.Println("俺启动了")
+		log.Info("俺启动了")
 		if err := api.ListenAndServe(); err != nil {
 			serverError <- err
 		}
@@ -93,13 +102,13 @@ func main() {
 
 	select {
 	case err := <-serverError:
-		log.Println("server error: ", err)
+		log.Info("server error: ", err)
 	case sig := <-shutdown:
-		log.Printf("receive signal:%v", sig)
+		log.Info("receive signal:%v", sig)
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		if err := api.Shutdown(ctx); err != nil {
-			log.Println("shutdown:", err)
+			log.Info("shutdown:", err)
 			api.Close()
 		}
 		// 做一些资源关闭，清理操作
