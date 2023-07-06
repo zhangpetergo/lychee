@@ -50,3 +50,44 @@ type Config struct {
 > 通过在结构体字段上指定`mapstructure`标签，您可以为每个字段定义自定义映射规则，例如在配置文件中指定键名或处理特定数据类型。
 >
 > 总的来说，在 Viper 中使用`mapstructure`标签可以提供更灵活和可定制的方法来将配置值映射到结构体字段，从而为处理 Go 应用程序中的复杂配置场景提供了强大的工具集。
+
+
+
+
+
+
+
+
+
+## 向上下文中添加值
+
+zap 包 记录 context 的内容
+
+
+
+可以搜搜 zap context
+
+参考链接
+
+https://github.com/uber-go/zap/issues/539
+
+https://github.com/uber-go/zap/issues/323
+
+https://github.com/northwesternmutual/kanali/blob/master/pkg/log/log.go
+
+https://tehub.com/a/3RsRiVgWHc
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
