@@ -8,7 +8,6 @@ import (
 	"github.com/zhangpetergo/lychee/app/services/sales-api/handlers"
 	"github.com/zhangpetergo/lychee/business/web/v1/debug"
 	"github.com/zhangpetergo/lychee/foundation/logger"
-	_ "github.com/zhangpetergo/lychee/foundation/zlog"
 	"net/http"
 	"os"
 	"os/signal"
