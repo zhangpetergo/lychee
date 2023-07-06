@@ -8,6 +8,7 @@ import (
 	"github.com/zhangpetergo/lychee/app/services/sales-api/handlers"
 	"github.com/zhangpetergo/lychee/business/web/v1/debug"
 	"github.com/zhangpetergo/lychee/foundation/logger"
+	_ "github.com/zhangpetergo/lychee/foundation/zlog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -20,7 +21,7 @@ func main() {
 	// =========================================================================
 	// 初始化日志
 
-	log := logger.NewLogger("SALES-API")
+	log := logger.NewLogger("SALES-API").Sugar()
 	defer log.Sync()
 
 	// =========================================================================

@@ -2,20 +2,24 @@ package logger
 
 import (
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
 	"os"
+	"strconv"
 	"sync"
 )
 
-// 全局日志记录 Log
+const loggerKey = iota
+
+// 全局日志记录 Logger
 var zapDefault, _ = zap.NewProduction()
-var Log *zap.SugaredLogger = zapDefault.Sugar()
+var Logger *zap.Logger = zapDefault
 var once sync.Once
 
 // NewLogger 构建了一个可以同时写到 stdout 和 file的Sugared Logger，同时对输出的时间格式进行了 format
-func NewLogger(service string) *zap.SugaredLogger {
+func NewLogger(service string) *zap.Logger {
 	once.Do(func() {
 		fmt.Println("初始化")
 		// 配置console输出
@@ -95,7 +99,25 @@ func NewLogger(service string) *zap.SugaredLogger {
 			zap.String("service", service),
 		}
 
-		Log = logger.With(extraFields...).Sugar()
+		Logger = logger.With(extraFields...)
 	})
-	return Log
+	return Logger
+}
+
+// 给指定的context添加字段（关键方法）
+func NewContext(ctx *gin.Context, fields ...zapcore.Field) {
+	ctx.Set(strconv.Itoa(loggerKey), WithContext(ctx).With(fields...))
+}
+
+// 从指定的context返回一个zap实例（关键方法）
+func WithContext(ctx *gin.Context) *zap.Logger {
+	if ctx == nil {
+		return Logger
+	}
+	l, _ := ctx.Get(strconv.Itoa(loggerKey))
+	ctxLogger, ok := l.(*zap.Logger)
+	if ok {
+		return ctxLogger
+	}
+	return Logger
 }

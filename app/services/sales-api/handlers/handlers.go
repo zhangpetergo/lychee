@@ -20,7 +20,8 @@ func Router(log *zap.SugaredLogger) http.Handler {
 	// 压缩
 	router.Use(gzip.Gzip(gzip.BestCompression))
 	// 日志跟踪
-	router.Use(mid.Logger(log))
+	//router.Use(mid.Logger(log))
+	router.Use(mid.Logger())
 	v1.Routes(router)
 	return router
 }
