@@ -14,5 +14,6 @@ func Routes(router *gin.Engine) {
 	//
 	v1 := router.Group("/v1")
 	v1.GET("/hello", hello.Hello)
+	v1.GET("/version", hello.Version)
 
 }

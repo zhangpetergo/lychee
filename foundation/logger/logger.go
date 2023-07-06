@@ -9,11 +9,13 @@ import (
 	"sync"
 )
 
+// 全局日志记录 Log
+var zapDefault, _ = zap.NewProduction()
+var Log *zap.SugaredLogger = zapDefault.Sugar()
 var once sync.Once
 
 // NewLogger 构建了一个可以同时写到 stdout 和 file的Sugared Logger，同时对输出的时间格式进行了 format
 func NewLogger(service string) *zap.SugaredLogger {
-	var logger *zap.Logger
 	once.Do(func() {
 		fmt.Println("初始化")
 		// 配置console输出
@@ -86,14 +88,14 @@ func NewLogger(service string) *zap.SugaredLogger {
 		// zap 的调用者的行号和函数名，或者不是，取决于
 		// 启用的值。 这是 AddCaller 的通用形式。
 		//logger := zap.New(core, zap.AddStacktrace(zap.NewAtomicLevelAt(zap.ErrorLevel)), zap.WithCaller(true), zap.AddCallerSkip(1))
-		logger = zap.New(core, zap.AddStacktrace(zap.NewAtomicLevelAt(zap.ErrorLevel)), zap.WithCaller(true))
+		logger := zap.New(core, zap.AddStacktrace(zap.NewAtomicLevelAt(zap.ErrorLevel)), zap.WithCaller(true))
 
 		// 创建一个要添加的字段
 		extraFields := []zap.Field{
 			zap.String("service", service),
 		}
 
-		logger = logger.With(extraFields...)
+		Log = logger.With(extraFields...).Sugar()
 	})
-	return logger.Sugar()
+	return Log
 }
